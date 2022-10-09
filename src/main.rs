@@ -1,4 +1,3 @@
-use std::io::{self, prelude::*};
 use ash::{prelude::VkResult, vk, Entry};
 
 fn main() -> VkResult<()> {
