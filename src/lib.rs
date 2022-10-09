@@ -39,4 +39,11 @@ impl<'a> Gpu<'a> {
         self.allocations.entry(device.handle()).and_modify(|v| v.push(allocation));
         Ok(())
     }
+
+    pub fn new_resource(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
+        let device = &self.devices[idx];
+        let resource = unsafe { device.create_buffer(create_info, None)? };
+        self.resources.entry(device.handle()).and_modify(|v| v.push(resource));
+        Ok(())
+    }
 }
