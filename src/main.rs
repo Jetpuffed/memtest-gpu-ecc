@@ -11,12 +11,10 @@ fn main() -> VkResult<()> {
     };
 
     // Define application-specific metadata
-    let application_info = vk::ApplicationInfo::builder()
-        .api_version(api_version);
+    let application_info = vk::ApplicationInfo::builder().api_version(api_version);
 
     // Define what properties an instance should have upon creation
-    let instance_info = vk::InstanceCreateInfo::builder()
-        .application_info(&application_info);
+    let instance_info = vk::InstanceCreateInfo::builder().application_info(&application_info);
 
     // Initialize a new instance to be used for the remainder of the program's run time
     let instance = unsafe { entry.create_instance(&instance_info, None)? };
