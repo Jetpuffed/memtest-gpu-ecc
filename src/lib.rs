@@ -5,6 +5,7 @@ pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
     devices: Vec<Device>,
+    allocations: HashMap<vk::Device, Vec<vk::DeviceMemory>>,
     resources: HashMap<vk::Device, Vec<vk::Buffer>>,
 }
 
@@ -14,6 +15,7 @@ impl<'a> Gpu<'a> {
             instance,
             handle,
             devices: Vec::new(),
+            allocations: HashMap::new(),
             resources: HashMap::new(),
         }
     }
@@ -26,6 +28,7 @@ impl<'a> Gpu<'a> {
         };
         self.devices.push(device);
         let device = &self.devices[self.devices.len() - 1];
+        self.allocations.insert(device.handle(), Vec::new());
         self.resources.insert(device.handle(), Vec::new());
         Ok(device)
     }
