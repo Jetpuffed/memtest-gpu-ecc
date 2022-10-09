@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use ash::{prelude::VkResult, vk, Device, Instance};
 
 pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
     devices: Vec<Device>,
+    resources: HashMap<vk::Device, Vec<vk::Buffer>>,
 }
 
 impl<'a> Gpu<'a> {
@@ -12,6 +14,7 @@ impl<'a> Gpu<'a> {
             instance,
             handle,
             devices: Vec::new(),
+            resources: HashMap::new(),
         }
     }
 
@@ -22,6 +25,8 @@ impl<'a> Gpu<'a> {
                 .create_device(*self.handle, create_info, None)?
         };
         self.devices.push(device);
-        Ok(&self.devices[self.devices.len() - 1])
+        let device = &self.devices[self.devices.len() - 1];
+        self.resources.insert(device.handle(), Vec::new());
+        Ok(device)
     }
 }
