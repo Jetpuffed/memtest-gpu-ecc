@@ -1,3 +1,4 @@
+use std::io::{self, prelude::*};
 use ash::{prelude::VkResult, vk, Entry};
 
 fn main() -> VkResult<()> {
@@ -20,6 +21,16 @@ fn main() -> VkResult<()> {
 
     // Initialize a new instance to be used for the remainder of the program's run time
     let instance = unsafe { entry.create_instance(&instance_info, None)? };
+
+    // Retrieve a list of all physical devices present on host environment
+    let physical_devices = unsafe { instance.enumerate_physical_devices()? };
+
+    // Select the primary physical device, or prompt user to select desired device if more than one are found
+    let physical_device = if physical_devices.len() > 1 {
+        unimplemented!()
+    } else {
+        physical_devices[0]
+    };
 
     Ok(())
 }
