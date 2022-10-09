@@ -20,16 +20,23 @@ impl<'a> Gpu<'a> {
         }
     }
 
-    /// Creates a new logical device and appends it to the `devices` vec. Returns a reference to the newly created device.
-    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<&Device> {
+    /// Creates a new logical device and appends it to the `devices` vec.
+    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
         let device = unsafe {
             self.instance
                 .create_device(*self.handle, create_info, None)?
         };
         self.devices.push(device);
-        let device = &self.devices[self.devices.len() - 1];
-        self.allocations.insert(device.handle(), Vec::new());
-        self.resources.insert(device.handle(), Vec::new());
-        Ok(device)
+        let device = self.devices[self.devices.len() - 1].handle();
+        self.allocations.insert(device, Vec::new());
+        self.resources.insert(device, Vec::new());
+        Ok(())
+    }
+
+    pub fn new_allocation(&mut self, idx: usize, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
+        let device = &self.devices[idx];
+        let allocation = unsafe { device.allocate_memory(create_info, None)? };
+        self.allocations.entry(device.handle()).and_modify(|v| v.push(allocation));
+        Ok(())
     }
 }
