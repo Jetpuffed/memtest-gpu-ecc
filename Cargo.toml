@@ -1,0 +1,7 @@
+[package]
+name = "memtest-gpu-ecc"
+version = "0.0.0"
+edition = "2021"
+authors = ["Brandon Christoffer <me@brandonchristoffer.com>"]
+
+[dependencies]
