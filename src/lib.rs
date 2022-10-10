@@ -6,7 +6,7 @@ pub struct Gpu<'a> {
     handle: &'a vk::PhysicalDevice,
     devices: Vec<Device>,
     allocations: HashMap<vk::Device, Vec<vk::DeviceMemory>>,
-    resources: HashMap<vk::Device, Vec<vk::Buffer>>,
+    buffers: HashMap<vk::Device, Vec<vk::Buffer>>,
 }
 
 impl<'a> Gpu<'a> {
@@ -16,7 +16,7 @@ impl<'a> Gpu<'a> {
             handle,
             devices: Vec::new(),
             allocations: HashMap::new(),
-            resources: HashMap::new(),
+            buffers: HashMap::new(),
         }
     }
 
@@ -29,7 +29,7 @@ impl<'a> Gpu<'a> {
         self.devices.push(device);
         let device = self.devices[self.devices.len() - 1].handle();
         self.allocations.insert(device, Vec::new());
-        self.resources.insert(device, Vec::new());
+        self.buffers.insert(device, Vec::new());
         Ok(())
     }
 
@@ -40,10 +40,10 @@ impl<'a> Gpu<'a> {
         Ok(())
     }
 
-    pub fn new_resource(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
+    pub fn new_buffer(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
         let device = &self.devices[idx];
-        let resource = unsafe { device.create_buffer(create_info, None)? };
-        self.resources.entry(device.handle()).and_modify(|v| v.push(resource));
+        let buffer = unsafe { device.create_buffer(create_info, None)? };
+        self.buffers.entry(device.handle()).and_modify(|v| v.push(buffer));
         Ok(())
     }
 }
