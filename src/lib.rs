@@ -20,30 +20,42 @@ impl<'a> Gpu<'a> {
         }
     }
 
-    /// Creates a new logical device and appends it to the `devices` vec.
+    /// Returns a reference to the device at `idx`
+    fn device(&self, idx: usize) -> &Device {
+        &self.devices[idx]
+    }
+
+    /// Creates a new logical device and appends it to the `devices` vec
     pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
         let device = unsafe {
             self.instance
                 .create_device(*self.handle, create_info, None)?
         };
         self.devices.push(device);
-        let device = self.devices[self.devices.len() - 1].handle();
+        let device = self.device(self.devices.len() - 1).handle();
         self.allocations.insert(device, Vec::new());
         self.buffers.insert(device, Vec::new());
         Ok(())
     }
 
     pub fn new_allocation(&mut self, idx: usize, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
-        let device = &self.devices[idx];
+        let device = self.device(idx);
         let allocation = unsafe { device.allocate_memory(create_info, None)? };
         self.allocations.entry(device.handle()).and_modify(|v| v.push(allocation));
         Ok(())
     }
 
     pub fn new_buffer(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
-        let device = &self.devices[idx];
+        let device = self.device(idx);
         let buffer = unsafe { device.create_buffer(create_info, None)? };
         self.buffers.entry(device.handle()).and_modify(|v| v.push(buffer));
+        Ok(())
+    }
+
+    pub fn bind_buffer(&mut self, idx: usize, buf_idx: usize, alc_idx: usize) -> VkResult<()> {
+        let device = self.device(idx);
+        let device_handle = device.handle();
+        unsafe { device.bind_buffer_memory(self.buffers[&device_handle][buf_idx], self.allocations[&device_handle][alc_idx], 0)? };
         Ok(())
     }
 }
