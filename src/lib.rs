@@ -26,6 +26,18 @@ impl GpuProperties {
     }
 }
 
+pub struct GpuMemory<'a> {
+    device: &'a Device,
+    allocation: vk::DeviceMemory,
+}
+
+impl<'a> GpuMemory<'a> {
+    pub fn new(device: &'a Device, create_info: &vk::MemoryAllocateInfo) -> VkResult<Self> {
+        let allocation = unsafe { device.allocate_memory(create_info, None)? };
+        Ok(Self { device, allocation })
+    }
+}
+
 pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
