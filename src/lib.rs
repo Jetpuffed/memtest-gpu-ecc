@@ -6,6 +6,16 @@ pub struct GpuProperties {
     physical_device_memory_properties: vk::PhysicalDeviceMemoryProperties,
 }
 
+impl GpuProperties {
+    pub fn physical_device_properties(&self) -> &vk::PhysicalDeviceProperties {
+        &self.physical_device_properties
+    }
+
+    pub fn physical_device_memory_properties(&self) -> &vk::PhysicalDeviceMemoryProperties {
+        &self.physical_device_memory_properties
+    }
+}
+
 pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
