@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub struct GpuProperties {
     physical_device_properties: vk::PhysicalDeviceProperties,
     physical_device_memory_properties: vk::PhysicalDeviceMemoryProperties,
+    physical_device_features: vk::PhysicalDeviceFeatures,
 }
 
 impl GpuProperties {
@@ -13,6 +14,10 @@ impl GpuProperties {
 
     pub fn physical_device_memory_properties(&self) -> &vk::PhysicalDeviceMemoryProperties {
         &self.physical_device_memory_properties
+    }
+
+    pub fn physical_device_features(&self) -> &vk::PhysicalDeviceFeatures {
+        &self.physical_device_features
     }
 }
 
@@ -40,6 +45,7 @@ impl<'a> Gpu<'a> {
                 physical_device_memory_properties: unsafe {
                     instance.get_physical_device_memory_properties(*handle)
                 },
+                physical_device_features: unsafe { instance.get_physical_device_features(*handle) },
             },
         }
     }
