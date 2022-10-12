@@ -1,5 +1,10 @@
-use std::collections::HashMap;
 use ash::{prelude::VkResult, vk, Device, Instance};
+use std::collections::HashMap;
+
+pub struct GpuProperties {
+    physical_device_properties: vk::PhysicalDeviceProperties,
+    physical_device_memory_properties: vk::PhysicalDeviceMemoryProperties,
+}
 
 pub struct Gpu<'a> {
     instance: &'a Instance,
@@ -7,6 +12,7 @@ pub struct Gpu<'a> {
     devices: Vec<Device>,
     allocations: HashMap<vk::Device, Vec<vk::DeviceMemory>>,
     buffers: HashMap<vk::Device, Vec<vk::Buffer>>,
+    properties: GpuProperties,
 }
 
 impl<'a> Gpu<'a> {
@@ -17,6 +23,14 @@ impl<'a> Gpu<'a> {
             devices: Vec::new(),
             allocations: HashMap::new(),
             buffers: HashMap::new(),
+            properties: GpuProperties {
+                physical_device_properties: unsafe {
+                    instance.get_physical_device_properties(*handle)
+                },
+                physical_device_memory_properties: unsafe {
+                    instance.get_physical_device_memory_properties(*handle)
+                },
+            },
         }
     }
 
@@ -38,24 +52,42 @@ impl<'a> Gpu<'a> {
         Ok(())
     }
 
-    pub fn new_allocation(&mut self, idx: usize, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
+    pub fn new_allocation(
+        &mut self,
+        idx: usize,
+        create_info: &vk::MemoryAllocateInfo,
+    ) -> VkResult<()> {
         let device = self.device(idx);
         let allocation = unsafe { device.allocate_memory(create_info, None)? };
-        self.allocations.entry(device.handle()).and_modify(|v| v.push(allocation));
+        self.allocations
+            .entry(device.handle())
+            .and_modify(|v| v.push(allocation));
         Ok(())
     }
 
     pub fn new_buffer(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
         let device = self.device(idx);
         let buffer = unsafe { device.create_buffer(create_info, None)? };
-        self.buffers.entry(device.handle()).and_modify(|v| v.push(buffer));
+        self.buffers
+            .entry(device.handle())
+            .and_modify(|v| v.push(buffer));
         Ok(())
     }
 
     pub fn bind_buffer(&mut self, idx: usize, buf_idx: usize, alc_idx: usize) -> VkResult<()> {
         let device = self.device(idx);
         let device_handle = device.handle();
-        unsafe { device.bind_buffer_memory(self.buffers[&device_handle][buf_idx], self.allocations[&device_handle][alc_idx], 0)? };
+        unsafe {
+            device.bind_buffer_memory(
+                self.buffers[&device_handle][buf_idx],
+                self.allocations[&device_handle][alc_idx],
+                0,
+            )?
+        };
         Ok(())
+    }
+
+    pub fn properties(&self) -> &GpuProperties {
+        &self.properties
     }
 }
