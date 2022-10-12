@@ -1,5 +1,5 @@
-use memtest_gpu_ecc::Gpu;
 use ash::{prelude::VkResult, vk, Entry};
+use memtest_gpu_ecc::Gpu;
 
 fn main() -> VkResult<()> {
     // Load the Vulkan library (if available on host environment)
@@ -34,9 +34,14 @@ fn main() -> VkResult<()> {
     let mut gpu = Gpu::new(&instance, &physical_device);
 
     // Find a queue family that supports transfer operations
-    let queue_family_index = gpu.properties().queue_family_properties().iter().position(|x| (x.queue_flags.as_raw() & vk::QueueFlags::TRANSFER.as_raw()) != 0).expect("unable to find queue family with transfer capabilities");
-    let queue_priorities = [1.0];  // array length is equal to # of queues to be requested
-    
+    let queue_family_index = gpu
+        .properties()
+        .queue_family_properties()
+        .iter()
+        .position(|x| (x.queue_flags.as_raw() & vk::QueueFlags::TRANSFER.as_raw()) != 0)
+        .expect("unable to find queue family with transfer capabilities");
+    let queue_priorities = [1.0]; // array length is equal to # of queues to be requested
+
     // Define what queue(s) a device should have access to upon creation
     let queue_create_infos = [vk::DeviceQueueCreateInfo::builder()
         .queue_family_index(queue_family_index as u32)
