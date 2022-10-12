@@ -5,6 +5,7 @@ pub struct GpuProperties {
     physical_device_properties: vk::PhysicalDeviceProperties,
     physical_device_memory_properties: vk::PhysicalDeviceMemoryProperties,
     physical_device_features: vk::PhysicalDeviceFeatures,
+    queue_family_properties: Vec<vk::QueueFamilyProperties>,
 }
 
 impl GpuProperties {
@@ -18,6 +19,10 @@ impl GpuProperties {
 
     pub fn physical_device_features(&self) -> &vk::PhysicalDeviceFeatures {
         &self.physical_device_features
+    }
+
+    pub fn queue_family_properties(&self) -> &[vk::QueueFamilyProperties] {
+        &self.queue_family_properties
     }
 }
 
@@ -46,6 +51,9 @@ impl<'a> Gpu<'a> {
                     instance.get_physical_device_memory_properties(*handle)
                 },
                 physical_device_features: unsafe { instance.get_physical_device_features(*handle) },
+                queue_family_properties: unsafe {
+                    instance.get_physical_device_queue_family_properties(*handle)
+                },
             },
         }
     }
