@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ash::{prelude::VkResult, vk, Device, Instance};
 
 pub struct Gpu<'a> {
@@ -24,7 +26,7 @@ impl<'a> Gpu<'a> {
     pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
         if self.device.is_some() {
             dbg!("Logical device already exists. Drop the old device first before creating a new one.");
-            return Err(vk::Result::ERROR_INITIALIZATION_FAILED)
+            return Err(vk::Result::ERROR_INITIALIZATION_FAILED);
         }
         let device = unsafe {
             self.instance
@@ -32,6 +34,22 @@ impl<'a> Gpu<'a> {
         };
         self.device = Some(device);
         Ok(())
+    }
+}
+
+pub struct GpuResource<'a> {
+    device: &'a Device,
+    allocation: Option<vk::DeviceMemory>,
+    buffers: Vec<vk::Buffer>,
+}
+
+impl<'a> GpuResource<'a> {
+    pub fn new(device: &'a Device) -> Self {
+        Self {
+            device,
+            allocation: None,
+            buffers: Vec::new(),
+        }
     }
 }
 
