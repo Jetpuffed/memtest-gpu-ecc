@@ -1,5 +1,4 @@
 use ash::{prelude::VkResult, vk, Device, Instance};
-use std::collections::HashMap;
 
 pub struct GpuProperties {
     physical_device_properties: vk::PhysicalDeviceProperties,
@@ -9,6 +8,23 @@ pub struct GpuProperties {
 }
 
 impl GpuProperties {
+    pub fn new(instance: &Instance, physical_device: &vk::PhysicalDevice) -> Self {
+        Self {
+            physical_device_properties: unsafe {
+                instance.get_physical_device_properties(*physical_device)
+            },
+            physical_device_memory_properties: unsafe {
+                instance.get_physical_device_memory_properties(*physical_device)
+            },
+            physical_device_features: unsafe {
+                instance.get_physical_device_features(*physical_device)
+            },
+            queue_family_properties: unsafe {
+                instance.get_physical_device_queue_family_properties(*physical_device)
+            },
+        }
+    }
+
     pub fn physical_device_properties(&self) -> &vk::PhysicalDeviceProperties {
         &self.physical_device_properties
     }
@@ -26,24 +42,10 @@ impl GpuProperties {
     }
 }
 
-pub struct GpuMemory<'a> {
-    device: &'a Device,
-    allocation: vk::DeviceMemory,
-}
-
-impl<'a> GpuMemory<'a> {
-    pub fn new(device: &'a Device, create_info: &vk::MemoryAllocateInfo) -> VkResult<Self> {
-        let allocation = unsafe { device.allocate_memory(create_info, None)? };
-        Ok(Self { device, allocation })
-    }
-}
-
 pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
-    devices: Vec<Device>,
-    allocations: HashMap<vk::Device, Vec<vk::DeviceMemory>>,
-    buffers: HashMap<vk::Device, Vec<vk::Buffer>>,
+    device: Option<Device>,
     properties: GpuProperties,
 }
 
@@ -52,78 +54,25 @@ impl<'a> Gpu<'a> {
         Self {
             instance,
             handle,
-            devices: Vec::new(),
-            allocations: HashMap::new(),
-            buffers: HashMap::new(),
-            properties: GpuProperties {
-                physical_device_properties: unsafe {
-                    instance.get_physical_device_properties(*handle)
-                },
-                physical_device_memory_properties: unsafe {
-                    instance.get_physical_device_memory_properties(*handle)
-                },
-                physical_device_features: unsafe { instance.get_physical_device_features(*handle) },
-                queue_family_properties: unsafe {
-                    instance.get_physical_device_queue_family_properties(*handle)
-                },
-            },
+            device: None,
+            properties: GpuProperties::new(instance, handle),
         }
-    }
-
-    /// Returns a reference to the device at `idx`
-    fn device(&self, idx: usize) -> &Device {
-        &self.devices[idx]
-    }
-
-    /// Creates a new logical device and appends it to the `devices` vec
-    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
-        let device = unsafe {
-            self.instance
-                .create_device(*self.handle, create_info, None)?
-        };
-        self.devices.push(device);
-        let device = self.device(self.devices.len() - 1).handle();
-        self.allocations.insert(device, Vec::new());
-        self.buffers.insert(device, Vec::new());
-        Ok(())
-    }
-
-    pub fn new_allocation(
-        &mut self,
-        idx: usize,
-        create_info: &vk::MemoryAllocateInfo,
-    ) -> VkResult<()> {
-        let device = self.device(idx);
-        let allocation = unsafe { device.allocate_memory(create_info, None)? };
-        self.allocations
-            .entry(device.handle())
-            .and_modify(|v| v.push(allocation));
-        Ok(())
-    }
-
-    pub fn new_buffer(&mut self, idx: usize, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
-        let device = self.device(idx);
-        let buffer = unsafe { device.create_buffer(create_info, None)? };
-        self.buffers
-            .entry(device.handle())
-            .and_modify(|v| v.push(buffer));
-        Ok(())
-    }
-
-    pub fn bind_buffer(&mut self, idx: usize, buf_idx: usize, alc_idx: usize) -> VkResult<()> {
-        let device = self.device(idx);
-        let device_handle = device.handle();
-        unsafe {
-            device.bind_buffer_memory(
-                self.buffers[&device_handle][buf_idx],
-                self.allocations[&device_handle][alc_idx],
-                0,
-            )?
-        };
-        Ok(())
     }
 
     pub fn properties(&self) -> &GpuProperties {
         &self.properties
+    }
+
+    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
+        if self.device.is_some() {
+            dbg!("Logical device already exists. Drop the old device first before creating a new one.");
+            return Err(vk::Result::ERROR_INITIALIZATION_FAILED)
+        }
+        let device = unsafe {
+            self.instance
+                .create_device(*self.handle, create_info, None)?
+        };
+        self.device = Some(device);
+        Ok(())
     }
 }
