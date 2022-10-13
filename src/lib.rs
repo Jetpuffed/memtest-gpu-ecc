@@ -51,6 +51,12 @@ impl<'a> GpuResource<'a> {
             buffers: Vec::new(),
         }
     }
+
+    fn new_buffer(&mut self, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
+        let buffer = unsafe { self.device.create_buffer(create_info, None)? };
+        self.buffers.push(buffer);
+        Ok(())
+    }
 }
 
 pub struct GpuProperties {
