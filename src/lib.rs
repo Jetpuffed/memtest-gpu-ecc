@@ -57,6 +57,16 @@ impl<'a> GpuResource<'a> {
         self.buffers.push(buffer);
         Ok(())
     }
+
+    fn new_allocation(&mut self, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
+        if self.allocation.is_some() {
+            dbg!("An allocation already exists. Drop the old allocation first before creating a new one.");
+            return Err(vk::Result::ERROR_OUT_OF_DEVICE_MEMORY)
+        }
+        let allocation = unsafe { self.device.allocate_memory(create_info, None)? };
+        self.allocation = Some(allocation);
+        Ok(())
+    }
 }
 
 pub struct GpuProperties {
