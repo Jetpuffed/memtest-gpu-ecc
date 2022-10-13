@@ -1,5 +1,40 @@
 use ash::{prelude::VkResult, vk, Device, Instance};
 
+pub struct Gpu<'a> {
+    instance: &'a Instance,
+    handle: &'a vk::PhysicalDevice,
+    device: Option<Device>,
+    properties: GpuProperties,
+}
+
+impl<'a> Gpu<'a> {
+    pub fn new(instance: &'a Instance, handle: &'a vk::PhysicalDevice) -> Self {
+        Self {
+            instance,
+            handle,
+            device: None,
+            properties: GpuProperties::new(instance, handle),
+        }
+    }
+
+    pub fn properties(&self) -> &GpuProperties {
+        &self.properties
+    }
+
+    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
+        if self.device.is_some() {
+            dbg!("Logical device already exists. Drop the old device first before creating a new one.");
+            return Err(vk::Result::ERROR_INITIALIZATION_FAILED)
+        }
+        let device = unsafe {
+            self.instance
+                .create_device(*self.handle, create_info, None)?
+        };
+        self.device = Some(device);
+        Ok(())
+    }
+}
+
 pub struct GpuProperties {
     physical_device_properties: vk::PhysicalDeviceProperties,
     physical_device_memory_properties: vk::PhysicalDeviceMemoryProperties,
@@ -39,40 +74,5 @@ impl GpuProperties {
 
     pub fn queue_family_properties(&self) -> &[vk::QueueFamilyProperties] {
         &self.queue_family_properties
-    }
-}
-
-pub struct Gpu<'a> {
-    instance: &'a Instance,
-    handle: &'a vk::PhysicalDevice,
-    device: Option<Device>,
-    properties: GpuProperties,
-}
-
-impl<'a> Gpu<'a> {
-    pub fn new(instance: &'a Instance, handle: &'a vk::PhysicalDevice) -> Self {
-        Self {
-            instance,
-            handle,
-            device: None,
-            properties: GpuProperties::new(instance, handle),
-        }
-    }
-
-    pub fn properties(&self) -> &GpuProperties {
-        &self.properties
-    }
-
-    pub fn new_device(&mut self, create_info: &vk::DeviceCreateInfo) -> VkResult<()> {
-        if self.device.is_some() {
-            dbg!("Logical device already exists. Drop the old device first before creating a new one.");
-            return Err(vk::Result::ERROR_INITIALIZATION_FAILED)
-        }
-        let device = unsafe {
-            self.instance
-                .create_device(*self.handle, create_info, None)?
-        };
-        self.device = Some(device);
-        Ok(())
     }
 }
