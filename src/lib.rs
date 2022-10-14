@@ -1,5 +1,9 @@
 use ash::{prelude::VkResult, vk, Device, Instance};
 
+pub const KILOBYTE: u64 = 1024;
+pub const MEGABYTE: u64 = 1024u64.pow(2);
+pub const GIGABYTE: u64 = 1024u64.pow(3);
+
 pub struct Gpu<'a, 'b> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
