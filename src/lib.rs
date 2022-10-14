@@ -52,20 +52,31 @@ impl<'a> GpuResource<'a> {
         }
     }
 
-    fn new_buffer(&mut self, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
+    pub fn allocation(&self) -> vk::DeviceMemory {
+        if self.allocation.is_none() {
+            return vk::DeviceMemory::null();
+        }
+        self.allocation.unwrap()
+    }
+
+    pub fn new_buffer(&mut self, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
         let buffer = unsafe { self.device.create_buffer(create_info, None)? };
         self.buffers.push(buffer);
         Ok(())
     }
 
-    fn new_allocation(&mut self, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
+    pub fn new_allocation(&mut self, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
         if self.allocation.is_some() {
             dbg!("An allocation already exists. Drop the old allocation first before creating a new one.");
-            return Err(vk::Result::ERROR_OUT_OF_DEVICE_MEMORY)
+            return Err(vk::Result::ERROR_OUT_OF_DEVICE_MEMORY);
         }
         let allocation = unsafe { self.device.allocate_memory(create_info, None)? };
         self.allocation = Some(allocation);
         Ok(())
+    }
+
+    pub fn bind_memory(&self, bind_infos: &[vk::BindBufferMemoryInfo]) -> VkResult<()> {
+        unsafe { self.device.bind_buffer_memory2(bind_infos) }
     }
 }
 
