@@ -1,18 +1,20 @@
 use ash::{prelude::VkResult, vk, Device, Instance};
 
-pub struct Gpu<'a> {
+pub struct Gpu<'a, 'b> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
     device: Option<Device>,
+    resources: Vec<GpuResource<'b>>,
     properties: GpuProperties,
 }
 
-impl<'a> Gpu<'a> {
+impl<'a, 'b> Gpu<'a, 'b> {
     pub fn new(instance: &'a Instance, handle: &'a vk::PhysicalDevice) -> Self {
         Self {
             instance,
             handle,
             device: None,
+            resources: Vec::new(),
             properties: GpuProperties::new(instance, handle),
         }
     }
@@ -39,6 +41,16 @@ impl<'a> Gpu<'a> {
         };
         self.device = Some(device);
         Ok(())
+    }
+
+    pub fn new_resource(&'b mut self) -> VkResult<()> {
+        if let Some(device) = &self.device {
+            let resource = GpuResource::new(device);
+            self.resources.push(resource);
+            return Ok(())
+        }
+        dbg!("Device not found. Create a new logical device first before attemping to create a new resource.");
+        Err(vk::Result::ERROR_INITIALIZATION_FAILED)
     }
 }
 
