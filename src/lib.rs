@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use ash::{prelude::VkResult, vk, Device, Instance};
 
 pub struct Gpu<'a> {
@@ -17,6 +15,13 @@ impl<'a> Gpu<'a> {
             device: None,
             properties: GpuProperties::new(instance, handle),
         }
+    }
+
+    pub fn device(&self) -> Option<&Device> {
+        if let Some(device) = &self.device {
+            return Some(device)
+        }
+        None
     }
 
     pub fn properties(&self) -> &GpuProperties {
