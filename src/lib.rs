@@ -26,6 +26,10 @@ impl<'a, 'b> Gpu<'a, 'b> {
         None
     }
 
+    pub fn resources(&self, idx: usize) -> Option<&GpuResource> {
+        self.resources.get(idx)
+    }
+
     pub fn properties(&self) -> &GpuProperties {
         &self.properties
     }
