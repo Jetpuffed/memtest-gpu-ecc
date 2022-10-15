@@ -84,10 +84,24 @@ impl<'a> GpuResource<'a> {
         self.allocation.unwrap()
     }
 
-    pub fn new_buffer(&mut self, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
+    fn new_buffer(&mut self, create_info: &vk::BufferCreateInfo) -> VkResult<()> {
         let buffer = unsafe { self.device.create_buffer(create_info, None)? };
         self.buffers.push(buffer);
         Ok(())
+    }
+
+    pub fn new_src_buffer(&mut self, size: u64) -> VkResult<()> {
+        let buffer_info = vk::BufferCreateInfo::builder()
+            .size(size)
+            .usage(vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::TRANSFER_SRC);
+        self.new_buffer(&buffer_info)
+    }
+
+    pub fn new_dst_buffer(&mut self, size: u64) -> VkResult<()> {
+        let buffer_info = vk::BufferCreateInfo::builder()
+            .size(size)
+            .usage(vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::TRANSFER_DST);
+        self.new_buffer(&buffer_info)
     }
 
     pub fn new_allocation(&mut self, create_info: &vk::MemoryAllocateInfo) -> VkResult<()> {
