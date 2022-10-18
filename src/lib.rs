@@ -146,4 +146,13 @@ impl GpuProperties {
         }
         Some(indices)
     }
+
+    pub fn find_memory_type(&self, flags: vk::MemoryPropertyFlags) -> Option<usize> {
+        let index = self
+            .memory_properties
+            .memory_types
+            .iter()
+            .position(|m| (m.property_flags.as_raw() & flags.as_raw()) != 0);
+        index
+    }
 }
