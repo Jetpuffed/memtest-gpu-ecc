@@ -8,6 +8,7 @@ pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
     device: Option<Device>,
+    memory: Option<vk::DeviceMemory>,
     properties: GpuProperties,
 }
 
@@ -17,6 +18,7 @@ impl<'a> Gpu<'a> {
             instance,
             handle,
             device: None,
+            memory: None,
             properties: GpuProperties::new(instance, handle),
         }
     }
@@ -32,6 +34,13 @@ impl<'a> Gpu<'a> {
     pub fn device(&self) -> Option<&Device> {
         if let Some(device) = &self.device {
             return Some(device);
+        }
+        None
+    }
+
+    pub fn memory(&self) -> Option<&vk::DeviceMemory> {
+        if let Some(memory) = &self.memory {
+            return Some(memory);
         }
         None
     }
@@ -73,6 +82,18 @@ impl<'a> Gpu<'a> {
                 .create_device(*self.handle, &create_info, None)
                 .ok()
         };
+    }
+
+    pub fn allocate_memory(&mut self, size: u64) {
+        let device = self.device.as_ref().expect("device not found");
+        let memory_type_index = self
+            .properties
+            .find_memory_type(vk::MemoryPropertyFlags::DEVICE_LOCAL)
+            .expect("memory type not found"); // should use device memory, not host memory
+        let create_info = vk::MemoryAllocateInfo::builder()
+            .allocation_size(size)
+            .memory_type_index(memory_type_index as u32);
+        self.memory = unsafe { device.allocate_memory(&create_info, None).ok() };
     }
 }
 
