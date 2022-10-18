@@ -8,6 +8,7 @@ pub struct Gpu<'a> {
     instance: &'a Instance,
     handle: &'a vk::PhysicalDevice,
     device: Option<Device>,
+    command_pool: Option<vk::CommandPool>,
     memory: Option<vk::DeviceMemory>,
     buffers: Vec<vk::Buffer>,
     properties: GpuProperties,
@@ -19,6 +20,7 @@ impl<'a> Gpu<'a> {
             instance,
             handle,
             device: None,
+            command_pool: None,
             memory: None,
             buffers: Vec::new(),
             properties: GpuProperties::new(instance, handle),
@@ -36,6 +38,13 @@ impl<'a> Gpu<'a> {
     pub fn device(&self) -> Option<&Device> {
         if let Some(device) = &self.device {
             return Some(device);
+        }
+        None
+    }
+
+    pub fn command_pool(&self) -> Option<&vk::CommandPool> {
+        if let Some(command_pool) = &self.command_pool {
+            return Some(command_pool);
         }
         None
     }
@@ -88,14 +97,21 @@ impl<'a> Gpu<'a> {
                 .create_device(*self.handle, &create_info, None)
                 .ok()
         };
+        self.new_command_pool(queue_family_indices[0] as u32); // spooky undocumented side effect!
     }
 
     pub fn new_buffer(&mut self, size: u64) {
         let device = self.device.as_ref().expect("device not found");
-        let create_info = vk::BufferCreateInfo::builder()
-            .size(size)
-            .usage(vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::TRANSFER_SRC | vk::BufferUsageFlags::TRANSFER_DST);
-        let buffer = unsafe { device.create_buffer(&create_info, None).expect("failed to create buffer") };
+        let create_info = vk::BufferCreateInfo::builder().size(size).usage(
+            vk::BufferUsageFlags::STORAGE_BUFFER
+                | vk::BufferUsageFlags::TRANSFER_SRC
+                | vk::BufferUsageFlags::TRANSFER_DST,
+        );
+        let buffer = unsafe {
+            device
+                .create_buffer(&create_info, None)
+                .expect("failed to create buffer")
+        };
         self.buffers.push(buffer);
     }
 
@@ -114,7 +130,19 @@ impl<'a> Gpu<'a> {
     pub fn bind_memory(&self, buffer: &vk::Buffer, offset: u64) {
         let device = self.device.as_ref().expect("device not found");
         let device_memory = self.memory.as_ref().expect("device memory not found");
-        unsafe { device.bind_buffer_memory(*buffer, *device_memory, offset).expect("failed to bind buffer to memory") };
+        unsafe {
+            device
+                .bind_buffer_memory(*buffer, *device_memory, offset)
+                .expect("failed to bind buffer to memory")
+        };
+    }
+
+    fn new_command_pool(&mut self, queue_family_index: u32) {
+        let device = self.device.as_ref().expect("device not found");
+        let create_info = vk::CommandPoolCreateInfo::builder()
+            .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
+            .queue_family_index(queue_family_index);
+        self.command_pool = unsafe { device.create_command_pool(&create_info, None).ok() };
     }
 }
 
