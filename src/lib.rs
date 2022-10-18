@@ -9,6 +9,7 @@ pub struct Gpu<'a> {
     handle: &'a vk::PhysicalDevice,
     device: Option<Device>,
     memory: Option<vk::DeviceMemory>,
+    buffers: Vec<vk::Buffer>,
     properties: GpuProperties,
 }
 
@@ -19,6 +20,7 @@ impl<'a> Gpu<'a> {
             handle,
             device: None,
             memory: None,
+            buffers: Vec::new(),
             properties: GpuProperties::new(instance, handle),
         }
     }
@@ -43,6 +45,10 @@ impl<'a> Gpu<'a> {
             return Some(memory);
         }
         None
+    }
+
+    pub fn buffers(&self) -> &[vk::Buffer] {
+        &self.buffers
     }
 
     pub fn properties(&self) -> &GpuProperties {
@@ -82,6 +88,15 @@ impl<'a> Gpu<'a> {
                 .create_device(*self.handle, &create_info, None)
                 .ok()
         };
+    }
+
+    pub fn new_buffer(&mut self, size: u64) {
+        let device = self.device.as_ref().expect("device not found");
+        let create_info = vk::BufferCreateInfo::builder()
+            .size(size)
+            .usage(vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::TRANSFER_SRC | vk::BufferUsageFlags::TRANSFER_DST);
+        let buffer = unsafe { device.create_buffer(&create_info, None).expect("failed to create buffer") };
+        self.buffers.push(buffer);
     }
 
     pub fn allocate_memory(&mut self, size: u64) {
