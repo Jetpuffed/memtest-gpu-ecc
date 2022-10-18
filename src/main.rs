@@ -46,5 +46,10 @@ fn main() -> VkResult<()> {
     // Initialize a new logical device
     gpu.new_device(1, vk::QueueFlags::TRANSFER); // copy commands need transfer queues
 
+    // Define iterators for the sizes of each block that will be used to measure transfer speed
+    let block_sizes_kb = (0..10).map(|n| (1 << n) * KILOBYTE);
+    let block_sizes_mb = (0..10).map(|n| (1 << n) * MEGABYTE);
+    let block_sizes_gb = (0..10).map(|n| (1 << n) * GIGABYTE);
+
     Ok(())
 }
