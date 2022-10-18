@@ -47,9 +47,20 @@ fn main() -> VkResult<()> {
     gpu.new_device(1, vk::QueueFlags::TRANSFER); // copy commands need transfer queues
 
     // Define iterators for the sizes of each block that will be used to measure transfer speed
-    let block_sizes_kb = (0..10).map(|n| (1 << n) * KILOBYTE);
-    let block_sizes_mb = (0..10).map(|n| (1 << n) * MEGABYTE);
-    let block_sizes_gb = (0..10).map(|n| (1 << n) * GIGABYTE);
+    let mut block_sizes_kb = (0..10).map(|n| (1 << n) * KILOBYTE);
+    let mut block_sizes_mb = (0..10).map(|n| (1 << n) * MEGABYTE);
+    let mut block_sizes_gb = (0..10).map(|n| (1 << n) * GIGABYTE);
+
+    // Create the buffers!
+    while let Some(block_kb) = block_sizes_kb.next() {
+        gpu.new_buffer(block_kb);
+    }
+    while let Some(block_mb) = block_sizes_mb.next() {
+        gpu.new_buffer(block_mb);
+    }
+    while let Some(block_gb) = block_sizes_gb.next() {
+        gpu.new_buffer(block_gb);
+    }
 
     Ok(())
 }
