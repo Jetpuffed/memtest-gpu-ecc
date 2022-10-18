@@ -42,6 +42,8 @@ impl<'a> Gpu<'a> {
 }
 
 pub struct GpuProperties {
+    layers: Vec<vk::LayerProperties>,
+    extensions: Vec<vk::ExtensionProperties>,
     features: vk::PhysicalDeviceFeatures,
     properties: vk::PhysicalDeviceProperties,
     memory_properties: vk::PhysicalDeviceMemoryProperties,
@@ -51,11 +53,21 @@ pub struct GpuProperties {
 impl GpuProperties {
     pub fn new(instance: &Instance, physical_device: &vk::PhysicalDevice) -> Self {
         Self {
+            layers: unsafe { instance.enumerate_device_layer_properties(*physical_device).unwrap() },
+            extensions: unsafe { instance.enumerate_device_extension_properties(*physical_device).unwrap() },
             features: unsafe { instance.get_physical_device_features(*physical_device) },
             properties: unsafe { instance.get_physical_device_properties(*physical_device) },
             memory_properties: unsafe { instance.get_physical_device_memory_properties(*physical_device) },
             queue_family_properties: unsafe { instance.get_physical_device_queue_family_properties(*physical_device) },
         }
+    }
+
+    pub fn layers(&self) -> &[vk::LayerProperties] {
+        &self.layers
+    }
+
+    pub fn extensions(&self) -> &[vk::ExtensionProperties] {
+        &self.extensions
     }
 
     pub fn features(&self) -> &vk::PhysicalDeviceFeatures {
