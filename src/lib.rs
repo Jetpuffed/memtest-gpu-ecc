@@ -1,4 +1,4 @@
-use ash::{vk, Device, Instance};
+use ash::{prelude::VkResult, vk, Device, Instance};
 
 pub const KILOBYTE: u64 = 1024;
 pub const MEGABYTE: u64 = 1024u64.pow(2);
@@ -72,5 +72,18 @@ impl GpuProperties {
 
     pub fn queue_family_properties(&self) -> &[vk::QueueFamilyProperties] {
         &self.queue_family_properties
+    }
+
+    pub fn find_queue_families(&self, flags: vk::QueueFlags) -> Option<Vec<usize>> {
+        let indices = self.queue_family_properties()
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| (v.queue_flags.as_raw() & flags.as_raw()) != 0)
+            .map(|(i, _)| i)
+            .collect::<Vec<usize>>();
+        if indices.len() == 0 {
+            return None
+        }
+        Some(indices)
     }
 }
