@@ -1,7 +1,17 @@
 use ash::{prelude::VkResult, vk, Entry};
-use memtest_gpu_ecc::Gpu;
+use memtest_gpu_ecc::{Gpu, GIGABYTE, KILOBYTE, MEGABYTE};
+
+#[cfg(target_env = "msvc")]
+fn disable_msvcrt_debug_heap() {
+    std::env::set_var("_NO_DEBUG_HEAP", "1");
+}
 
 fn main() -> VkResult<()> {
+    // NVIDIA recommendation: disable msvcrt debug heap for debug builds
+    if cfg!(debug_assertions) {
+        disable_msvcrt_debug_heap();
+    }
+
     // Load the Vulkan library (if available on host environment)
     let entry = Entry::linked();
 
@@ -33,27 +43,8 @@ fn main() -> VkResult<()> {
     // Simplify GPU operations with a wrapper around this physical device
     let mut gpu = Gpu::new(&instance, &physical_device);
 
-    // Find a queue family that supports transfer operations
-    let queue_family_index = gpu
-        .properties()
-        .queue_family_properties()
-        .iter()
-        .position(|x| (x.queue_flags.as_raw() & vk::QueueFlags::TRANSFER.as_raw()) != 0)
-        .expect("unable to find queue family with transfer capabilities");
-    let queue_priorities = [1.0]; // array length is equal to # of queues to be requested
-
-    // Define what queue(s) a device should have access to upon creation
-    let queue_create_infos = [vk::DeviceQueueCreateInfo::builder()
-        .queue_family_index(queue_family_index as u32)
-        .queue_priorities(&queue_priorities)
-        .build()];
-
-    // Build a logical device with all supported features enabled
-    let enabled_features = *gpu.properties().physical_device_features();
-    let device_info = vk::DeviceCreateInfo::builder()
-        .queue_create_infos(&queue_create_infos)
-        .enabled_features(&enabled_features);
-    gpu.new_device(&device_info)?;
+    // Initialize a new logical device
+    gpu.new_device(1, vk::QueueFlags::TRANSFER); // copy commands need transfer queues
 
     Ok(())
 }
