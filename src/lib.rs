@@ -39,6 +39,26 @@ impl<'a> Gpu<'a> {
     pub fn properties(&self) -> &GpuProperties {
         &self.properties
     }
+
+    pub fn new_device(&mut self, queues: i32, flags: vk::QueueFlags) {
+        let queue_family_indices = self.properties.find_queue_families(flags).expect("queue family not found");
+        let queue_priorities = vec![1.0; queues as usize];
+        let queue_create_infos = [
+            vk::DeviceQueueCreateInfo::builder()
+                .queue_family_index(queue_family_indices[0] as u32)  // first index will always be suitable
+                .queue_priorities(&queue_priorities)
+                .build()
+        ];
+        let enabled_layer_names = self.properties.layers.iter().map(|p| p.layer_name.as_ptr()).collect::<Vec<*const i8>>();
+        let enabled_extension_names = self.properties.extensions.iter().map(|p| p.extension_name.as_ptr()).collect::<Vec<*const i8>>();
+        let enabled_features = &self.properties.features;
+        let create_info = vk::DeviceCreateInfo::builder()
+            .queue_create_infos(&queue_create_infos)
+            .enabled_layer_names(&enabled_layer_names)  // deprecated, but adding for compatibility
+            .enabled_extension_names(&enabled_extension_names)
+            .enabled_features(enabled_features);
+        self.device = unsafe { self.instance.create_device(*self.handle, &create_info, None).ok() };
+    }
 }
 
 pub struct GpuProperties {
