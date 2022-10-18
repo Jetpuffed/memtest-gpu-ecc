@@ -110,6 +110,12 @@ impl<'a> Gpu<'a> {
             .memory_type_index(memory_type_index as u32);
         self.memory = unsafe { device.allocate_memory(&create_info, None).ok() };
     }
+
+    pub fn bind_memory(&self, buffer: &vk::Buffer, offset: u64) {
+        let device = self.device.as_ref().expect("device not found");
+        let device_memory = self.memory.as_ref().expect("device memory not found");
+        unsafe { device.bind_buffer_memory(*buffer, *device_memory, offset).expect("failed to bind buffer to memory") };
+    }
 }
 
 pub struct GpuProperties {
